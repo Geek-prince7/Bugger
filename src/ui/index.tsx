@@ -12,6 +12,8 @@ import {
 } from "../shared/types";
 import { buildExport } from "../export/index";
 import "./styles.css";
+import { CloudPanel } from "../cloud/Panel";
+import { cloudConfig } from "../cloud/config";
 const label = (value: string) => value.replaceAll("_", " ");
 const errorText = (error: unknown) =>
   error instanceof Error
@@ -264,10 +266,22 @@ function App() {
         </nav>
         <div className="sidebar-bottom">
           <span className="dot" /> Saved on this device
-          <p>No account. No page uploads.</p>
+          <p>
+            {cloudConfig
+              ? "Local by default. Optional private cloud copies."
+              : "No account. No page uploads."}
+          </p>
         </div>
       </aside>
       <main>
+        {!popup && (
+          <CloudPanel
+            selected={selected}
+            privacy={privacy}
+            editing={edit}
+            onLocalChanged={refresh}
+          />
+        )}
         {error && (
           <div className="alert" role="alert">
             {error}

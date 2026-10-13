@@ -29,3 +29,16 @@ ZIP contains `report.md`, `metadata.json`, and only included available evidence 
 `activeTab`: temporary access after a user gesture, including screenshot authorization. `scripting`: inject the local capture controller when activated. `storage`: local preferences and session state. There are no persistent host permissions, cookies/debugger permissions or required remote endpoints.
 
 Bugger sends no report data to a Bugger server. Browser/OS services, installed software, user backups and downstream recipients operate under their own policies. Local storage is not an encrypted vault. A future payment or cloud feature requires a revised data map and policy before activation.
+
+## Optional cloud-enabled build
+
+The original local-only map above remains accurate for unconfigured builds. A cloud-configured build adds explicit personal report copies:
+
+- Public build configuration identifies the API, Cognito issuer, public client ID and hosted login domain. Only these origins are requested as optional host permissions at sign-in.
+- The extension stores an access token and validated account/session metadata in `chrome.storage.session`; it discards refresh/ID tokens. PKCE verifier and state exist only for the sign-in operation. It stores account-scoped last-uploaded report versions in local extension storage, not report contents or secrets there.
+- An explicit upload sends privacy-projected report metadata and, if included, the original PNG to the configured API. Notes remain included. Nothing automatically uploads during capture/save/login.
+- The backend validates Cognito access tokens and namespaces reports by their verified subject. PostgreSQL holds metadata, version, byte count and private object key; S3 holds screenshot bytes. AWS IAM credentials remain on the backend instance role.
+- Downloading produces a new local copy with a new UUID. Cloud deletion and local deletion are independent. Sign-out clears local access credentials, not cloud data or identity-provider web cookies.
+- Backups, versioned objects and deletion failures need an operator retention and reconciliation policy. Cloud account erasure and automated orphan reconciliation are not yet implemented; complete these and the publication policy before serving real users.
+
+The license API separately stores HMAC hashes of license keys and installation registrations. Signing keys and the hashing pepper are server secrets. Paid checkout and extension entitlement enforcement remain pending.

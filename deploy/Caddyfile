@@ -1,0 +1,14 @@
+# Set BUGGER_API_DOMAIN and ACME_EMAIL in the Caddy systemd service environment.
+{
+  email {$ACME_EMAIL}
+}
+{$BUGGER_API_DOMAIN} {
+  encode zstd gzip
+  reverse_proxy 127.0.0.1:3000
+  header {
+    X-Content-Type-Options nosniff
+    Referrer-Policy no-referrer
+    -Server
+  }
+  # Access logging is intentionally disabled: paths may identify report records.
+}

@@ -1,0 +1,76 @@
+name: Deploy Bugger backend to EC2
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Check only, or deploy the tested backend to EC2
+        type: choice
+        required: true
+        default: check
+        options: [check, deploy]
+permissions:
+  contents: read
+concurrency:
+  group: bugger-backend-production
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/backend-ci.yml
+  deploy:
+    needs: verify
+    if: github.ref == 'refs/heads/main' && inputs.mode == 'deploy'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: backend-production
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+      ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+      EC2_INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}
+      GIT_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate deployment coordinates
+        shell: bash
+        run: |
+          [[ "$AWS_ACCOUNT_ID" =~ ^[0-9]{12}$ ]]
+          [[ "$AWS_REGION" =~ ^[a-z]{2}-[a-z]+-[0-9]+$ ]]
+          [[ "$ECR_REPOSITORY" =~ ^[a-z0-9][a-z0-9._/-]{0,127}$ ]]
+          [[ "$ECR_REPOSITORY" != *..* && "$ECR_REPOSITORY" != *//* ]]
+          [[ "$EC2_INSTANCE_ID" =~ ^i-([a-f0-9]{8}|[a-f0-9]{17})$ ]]
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}
+          role-session-name: bugger-backend-deploy
+          role-duration-seconds: 3600
+      - uses: actions/download-artifact@v4
+        with:
+          name: bugger-backend-image-${{ github.sha }}
+          path: /tmp/bugger-backend-image
+      - name: Push verified backend image
+        shell: bash
+        run: |
+          registry="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
+          image="$registry/$ECR_REPOSITORY:$GIT_SHA-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$registry"
+          docker load -i /tmp/bugger-backend-image/bugger-backend.tar
+          docker tag bugger-backend:check "$image"
+          docker push "$image"
+          digest=$(aws ecr describe-images --repository-name "$ECR_REPOSITORY" --image-ids "imageTag=$GIT_SHA-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" --query 'imageDetails[0].imageDigest' --output text)
+          [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]
+          echo "IMAGE_URI=$registry/$ECR_REPOSITORY@$digest" >> "$GITHUB_ENV"
+      - name: Deploy immutable image through SSM
+        run: node scripts/deploy-ec2.mjs deploy
+      - name: Clear registry login
+        if: always()
+        shell: bash
+        run: docker logout "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"

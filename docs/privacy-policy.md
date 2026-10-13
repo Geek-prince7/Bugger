@@ -5,7 +5,7 @@
 Owner: **[LEGAL OWNER NAME AND ADDRESS]**  
 Privacy/support contact: **[SUPPORT EMAIL OR CONTACT URL]**  
 Effective date: **[DATE OF PUBLICATION]**  
-Applies to: Bugger 0.1.0 local trial extension.
+Applies to: Bugger 0.1.0. Cloud-enabled builds require the deployment-specific details below to be completed before publication.
 
 ## What Bugger does with information
 
@@ -13,7 +13,7 @@ Bugger lets you deliberately capture an observation on a webpage. It stores your
 
 Bugger removes URL query strings, fragments and embedded credentials. Its current DOM snapshot omits page text and form values and records only a conservative structural fragment and selected computed styles. These measures do not remove confidential information from screenshots or guarantee that written notes and URL paths contain no personal data.
 
-The current build does not send reports to us, provide cloud accounts or sync, collect product analytics, or process purchases. Payment and paid license activation are unavailable. Bugger does not collect cookies, request bodies, authentication headers, console logs or network logs.
+The default unconfigured build keeps reports on your device. A configured cloud build offers optional sign-in and explicit report uploads. It sends the selected report fields and, only if included in your privacy review, the original screenshot to the configured Bugger backend. Cloud authentication uses Amazon Cognito; report metadata is stored in PostgreSQL and screenshots in private Amazon S3. It does not collect product analytics or process purchases. Payment and extension paid-license activation remain unavailable. Bugger does not collect cookies, request bodies, authentication headers, console logs or network logs.
 
 ## Your controls
 
@@ -25,8 +25,8 @@ An export or clipboard copy happens at your request and creates a copy outside B
 
 Saved reports remain in your browser until you delete them, clear relevant browser data or uninstall the extension. Browser behavior and backups may affect retention. Export important reports before uninstalling. Pending capture evidence is held locally until replaced or cleared by capture-session cleanup; the 30-minute save-expiry check is not a guaranteed deletion timer. Local preferences remain until changed or removed with extension data.
 
-Data is stored using browser extension storage, not a Bugger encrypted vault. People or software with access to your browser profile may be able to access it. We cannot guarantee absolute security or recover a deleted local report. There is no remote report archive maintained by this build.
+Data is stored using browser extension storage, not a Bugger encrypted vault. People or software with access to your browser profile may be able to access it. We cannot guarantee absolute security or recover a deleted local report. If you opt into cloud uploads, cloud copies remain separately stored until deleted. Deleting a local report does not delete a cloud copy, and signing out does not delete cloud reports. Cloud report deletion removes the active database record and attempts to remove its screenshot; backups, bucket versions and failed object-deletion retries require a defined retention policy. Deployment region, backup retention, account-deletion process and orphan-object cleanup must be documented before accepting real user data.
 
 ## Contact and changes
 
-Use **[SUPPORT CONTACT]** for questions about Bugger. If you choose to send reports to support, review them first; the owner must define support-message retention before publishing this policy. New licensing, analytics or cloud features require updated disclosures before release. Browser, operating-system, download-backup and recipient services have their own privacy practices.
+Use **[SUPPORT CONTACT]** for questions about Bugger. If you choose to send reports to support, review them first; the owner must define support-message retention before publishing this policy. Cloud operator: **[LEGAL OWNER]**. AWS region: **[REGION]**. Backup retention: **[PERIOD]**. Account deletion contact/process: **[PROCESS]**. Complete these details and review the actual configured service before release. Browser, operating-system, download-backup and recipient services have their own privacy practices.

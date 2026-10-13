@@ -1,0 +1,80 @@
+name: Release Bugger extension
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Package only, upload draft, or upload and request staged review
+        type: choice
+        required: true
+        default: package
+        options:
+          - package
+          - upload
+          - submit-review
+permissions:
+  contents: read
+concurrency:
+  group: bugger-extension-release
+  cancel-in-progress: false
+jobs:
+  package:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - run: npm run package
+        env:
+          BUGGER_API_URL: ${{ vars.BUGGER_API_URL }}
+          BUGGER_OIDC_ISSUER: ${{ vars.BUGGER_OIDC_ISSUER }}
+          BUGGER_OIDC_CLIENT_ID: ${{ vars.BUGGER_OIDC_CLIENT_ID }}
+          BUGGER_COGNITO_DOMAIN: ${{ vars.BUGGER_COGNITO_DOMAIN }}
+      - name: Validate release package
+        run: node scripts/cws-release.mjs package "release/bugger-$(node -p 'require("./package.json").version').zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bugger-extension-${{ github.sha }}
+          path: |
+            release/*.zip
+            release/*.sha256
+          if-no-files-found: error
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: extension-browser-test-results
+          path: test-results/
+  deploy:
+    needs: package
+    if: github.ref == 'refs/heads/main' && (inputs.mode == 'upload' || inputs.mode == 'submit-review')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: chrome-web-store
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - uses: actions/download-artifact@v4
+        with:
+          name: bugger-extension-${{ github.sha }}
+          path: release/
+      - name: Upload or submit staged review
+        env:
+          RELEASE_MODE: ${{ inputs.mode }}
+          CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+          CWS_PUBLISHER_ID: ${{ vars.CWS_PUBLISHER_ID }}
+          CWS_EXTENSION_ID: ${{ vars.CWS_EXTENSION_ID }}
+        run: node scripts/cws-release.mjs "$RELEASE_MODE" "release/bugger-$(node -p 'require("./package.json").version').zip"

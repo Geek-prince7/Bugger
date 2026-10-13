@@ -424,15 +424,15 @@ test("clipboard actions copy locators and reviewed report; screenshot failure pr
     .click();
   await p.getByText("Developer context", { exact: false }).click();
   await p.getByRole("button", { name: "Copy selector", exact: true }).click();
-  expect(await p.evaluate(() => navigator.clipboard.readText())).toContain(
-    "button:nth-of-type",
-  );
+  await expect
+    .poll(() => p.evaluate(() => navigator.clipboard.readText()))
+    .toContain("button:nth-of-type");
   await p.getByRole("button", { name: "Copy XPath", exact: true }).click();
-  expect(await p.evaluate(() => navigator.clipboard.readText())).toContain(
-    "local-name()='button'",
-  );
+  await expect
+    .poll(() => p.evaluate(() => navigator.clipboard.readText()))
+    .toContain("local-name()='button'");
   await p.getByRole("button", { name: "Copy report", exact: true }).click();
-  expect(await p.evaluate(() => navigator.clipboard.readText())).toContain(
-    "Screenshot failure recovery",
-  );
+  await expect
+    .poll(() => p.evaluate(() => navigator.clipboard.readText()))
+    .toContain("Screenshot failure recovery");
 });

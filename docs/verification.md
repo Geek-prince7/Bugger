@@ -31,3 +31,17 @@ HiDPI testing emulates DPR 2. This browser's captureVisibleTab bitmap can still 
 - 1 UUID test: RFC 4122 v4 shape and distinct values without secure-context-only randomUUID.
 
 The desktop manager was visually inspected from a real test screenshot. See acceptance-traceability.md for gaps. No Windows test, screen-reader certification, physical low-disk test, real payment integration, Chrome Web Store submission or GitHub CI success is claimed.
+
+## Backend, cloud and deployment verification — 2026-10-13
+
+The extension and release/deployment unit suite now has **90 passing tests**. This includes the original capture/storage/export checks, cloud PKCE and JWT validation, report privacy and conflict handling, account-switch protection, build configuration, report-schema parity, Chrome Store API mocks and SSM deployment mocks. The actual deployment Bash state machine is exercised with mocked external commands for successful rollout, candidate failure and restoration of the previous container after production failure. These tests do not constitute a real EC2 rollback drill.
+
+Backend checks: TypeScript build and **7 unit tests pass** (including signed entitlements, access-token validation, disabled-cloud behavior, limits and proxy trust). **3 integration tests pass against a real isolated PostgreSQL 16 container**: migration concurrency, device limits and revocation; account isolation, version races and image round-trip through an in-memory object adapter; concurrent report-count quota and object-upload failure rollback. Cognito and S3 themselves were not contacted.
+
+The **8 local-extension browser scenarios pass** on the existing macOS Chrome for Testing 151 runtime. A clipboard assertion initially raced the asynchronous write; it now polls the actual clipboard result. The full rerun passed. These browser scenarios exercise the default local-only build; live hosted sign-in remains a deployment acceptance item.
+
+Both local-only and example cloud-configured extension packages were built and passed package validation. The final local release ZIP is local-only; SHA-256 `fae08762435a5f25b4f06fbd5e34172172bea41babcd6309c716fbb127afddef`. Root lint/typecheck/build pass. Workflow YAML and IAM JSON parse; Bash syntax passes.
+
+The final backend Docker image builds using Node 22. Its production dependency audit during the build reports zero known vulnerabilities. A local smoke run uses UID 1000, a read-only filesystem, dropped capabilities, temporary test-only signing material and the isolated PostgreSQL database; readiness and revision endpoints respond successfully. This does not validate EC2 network rules, RDS TLS, instance IAM, Cognito callbacks, S3 policies or public DNS/TLS.
+
+No AWS resources were provisioned, no real payment processed, and no store upload or public release occurred. Configure and execute the documented live acceptance checks before calling the product production-ready. Pending commercial and operational items are enumerated in `implementation-plan.md`, `codebase-guide.md` and the deployment guides.

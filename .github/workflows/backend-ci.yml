@@ -1,0 +1,74 @@
+name: Verify backend
+on:
+  push:
+    paths:
+      [
+        "backend/**",
+        "deploy/**",
+        "scripts/deploy-ec2.mjs",
+        "tests/deploy-ec2.test.ts",
+        ".github/workflows/backend-ci.yml",
+        ".github/workflows/deploy-backend.yml",
+      ]
+  pull_request:
+    paths:
+      [
+        "backend/**",
+        "deploy/**",
+        "scripts/deploy-ec2.mjs",
+        "tests/deploy-ec2.test.ts",
+        ".github/workflows/backend-ci.yml",
+        ".github/workflows/deploy-backend.yml",
+      ]
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: bugger
+          POSTGRES_PASSWORD: ci-only-test-password
+          POSTGRES_DB: bugger_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U bugger -d bugger_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npx vitest run tests/deploy-ec2.test.ts
+      - run: bash -n deploy/deploy-backend.sh
+      - run: node scripts/deploy-ec2.mjs check
+      - run: npm ci
+        working-directory: backend
+      - run: npm test && npm run build
+        working-directory: backend
+      - run: npm run test:integration
+        working-directory: backend
+        env:
+          DATABASE_URL: postgres://bugger:ci-only-test-password@127.0.0.1:5432/bugger_test
+      - name: Build backend container
+        env:
+          GIT_SHA: ${{ github.sha }}
+        run: docker build --build-arg "GIT_SHA=$GIT_SHA" -t bugger-backend:check backend
+      - name: Save verified container
+        run: docker save bugger-backend:check -o /tmp/bugger-backend.tar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bugger-backend-image-${{ github.sha }}
+          path: /tmp/bugger-backend.tar
+          retention-days: 3
+          if-no-files-found: error

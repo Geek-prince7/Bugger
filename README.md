@@ -41,11 +41,21 @@ Browser tests use `npm run test:e2e`. Install the Playwright Chromium runtime wi
 
 ## Important scope limits
 
-Core capture and export work locally without a Bugger account or backend. Payments and paid license activation are **unavailable**. No real checkout, signed entitlement verification, revocation or offline license grace has been implemented. The planned commercial P0 release is blocked on these and the release checklist.
+Core capture and export work locally without a Bugger account or backend. A separate PostgreSQL/Cognito/S3 backend now implements licensing APIs and personal cloud report storage. Optional cloud-enabled extension builds support explicit uploads and downloads. Payments and extension paid-license activation remain **unavailable**: the backend signs and verifies entitlements, but checkout, fulfillment and extension-side enforcement are still release work. No AWS deployment or store publication has occurred.
 
 Capture deliberately omits page text, IDs, classes, arbitrary attributes, accessible names and asset URLs. Page titles are not collected. HTML is structural, depth/size bounded, and text is replaced with `[redacted]`. Export toggles cannot restore information that was never captured. Structural locators may change when the page changes; a snapshot is evidence, not a replay or automatic bug diagnosis.
 
-Screenshots can contain personal information. Review them and your written notes before export. There is no pixel blur/redaction, full-page capture, backup import, console/network logging, cloud sync, ticketing integration or guest capture. Restricted browser/store pages and inaccessible frames/shadow content are unsupported or limited. Drafts are transient; navigation can invalidate them. Export before uninstalling or clearing browser data. Export omission changes exported files, not the saved original.
+Screenshots can contain personal information. Review them and your written notes before export. There is no pixel blur/redaction, full-page capture, general backup import, console/network logging, automatic background sync, ticketing integration or guest capture. Restricted browser/store pages and inaccessible frames/shadow content are unsupported or limited. Drafts are transient; navigation can invalidate them. Export before uninstalling or clearing browser data. Export omission changes exported files, not the saved original.
+
+## Backend and deployment
+
+The backend uses **PostgreSQL** for licenses and cloud report metadata, **private S3** for screenshots, and **Cognito** for sign-in. Local reports continue to use **IndexedDB**. AWS resource IDs, domain and identity settings are configurable. Cloud access currently has no paid-license gate.
+
+- [Codebase walkthrough](docs/codebase-guide.md)
+- [Backend API and local setup](backend/README.md)
+- [EC2 deployment pipeline and setup](docs/backend-deployment.md)
+- [Chrome Web Store release pipeline](docs/extension-release.md)
+- [Opt-in cloud build and usage](docs/cloud-sync.md)
 
 ## Technical reference
 
@@ -60,6 +70,6 @@ Screenshots can contain personal information. Review them and your written notes
 - [Draft store listing](docs/store-listing.md)
 - [Original requirements](docs/source-prd.md)
 
-No payment secrets belong in this extension. Future licensing requires a separately configured service and verified provider integration; there is no production paid bypass or secret-key configuration in this build.
+No payment secrets belong in this extension. Commercial licensing still requires a configured service, extension enforcement and verified payment-provider integration; there is no production paid bypass or secret-key configuration in this build.
 
 `npm run package` audits the distribution file set and permissions, then creates `release/bugger-0.1.0.zip` and its SHA-256 checksum. The ZIP contains only the built extension. GitHub Actions is configured to verify pushes and pull requests; check the repository’s Actions page for hosted results.

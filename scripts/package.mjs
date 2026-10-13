@@ -6,11 +6,26 @@ if (manifest.name !== "Bugger" || manifest.manifest_version !== 3)
   throw new Error("Unexpected product manifest.");
 if (
   JSON.stringify([...manifest.permissions].sort()) !==
-  JSON.stringify(["activeTab", "scripting", "storage"])
+  JSON.stringify(
+    manifest.permissions.includes("identity")
+      ? ["activeTab", "identity", "scripting", "storage"]
+      : ["activeTab", "scripting", "storage"],
+  )
 )
   throw new Error("Review changed permissions before packaging.");
 if (manifest.host_permissions?.length || manifest.content_scripts?.length)
   throw new Error("Unexpected persistent site access.");
+if (
+  manifest.optional_host_permissions?.some(
+    (origin) => !/^https:\/\/[^/*]+\/\*$/.test(origin),
+  )
+)
+  throw new Error("Cloud origins must use exact HTTPS hosts.");
+if (
+  manifest.permissions.includes("identity") &&
+  !manifest.optional_host_permissions?.length
+)
+  throw new Error("Cloud identity needs configured origins.");
 const zip = new JSZip();
 const allowed = new Set([
   "background.js",
