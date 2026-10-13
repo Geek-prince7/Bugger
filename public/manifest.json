@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Bugger",
+  "version": "0.1.0",
+  "description": "Pin webpage observations and export private, local developer-ready reports.",
+  "minimum_chrome_version": "120",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Bugger — capture an observation"
+  },
+  "background": { "service_worker": "background.js", "type": "module" },
+  "icons": { "16": "icon16.png", "48": "icon48.png", "128": "icon128.png" },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'"
+  }
+}

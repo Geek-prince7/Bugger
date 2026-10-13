@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" /><title>Bugger QA playground</title
+  ><style>
+    body {
+      font: 18px system-ui;
+      background: #f6f5ef;
+      color: #192b32;
+      margin: 60px;
+    }
+    button,
+    input {
+      font: inherit;
+      padding: 12px;
+    }
+    .cards {
+      display: flex;
+      gap: 20px;
+    }
+    .card {
+      background: white;
+      padding: 32px;
+      max-width: 200px;
+    }
+    section {
+      margin: 30px 0;
+    }
+    #long {
+      margin-top: 1100px;
+    }
+  </style>
+  <h1>Bugger capture playground</h1>
+  <p>Local test data only. Check selection, privacy, scrolling and exports.</p>
+  <button id="checkout" onclick="this.dataset.clicked = 'yes'">
+    Subscribe <strong>now</strong>
+  </button>
+  <section class="cards">
+    <div class="card">Responsive card one</div>
+    <div class="card">Responsive card two</div>
+  </section>
+  <section>
+    <label>Email <input value="private@example.com" /></label
+    ><input type="password" value="secret-password" /><input
+      type="hidden"
+      value="secret-token"
+    />
+    <div contenteditable="true">Private editable content</div>
+    <p>Contact: private@example.com Bearer abcdefghijklmnopqrstuvwxyz</p>
+  </section>
+  <div id="shadow"></div>
+  <canvas width="120" height="80"></canvas
+  ><svg width="100" height="50">
+    <circle cx="25" cy="25" r="20" fill="teal" /></svg
+  ><button onclick="history.pushState({}, '', '/route-two')">SPA route</button>
+  <div id="long">
+    <h2>Scroll target</h2>
+    <button id="bottom">Bottom button</button>
+  </div>
+  <script>
+    document.querySelector("#shadow").attachShadow({ mode: "open" }).innerHTML =
+      "<button>Shadow button</button>";
+  </script>
+</html>
