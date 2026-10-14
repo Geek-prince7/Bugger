@@ -45,3 +45,7 @@ Both local-only and example cloud-configured extension packages were built and p
 The final backend Docker image builds using Node 22. Its production dependency audit during the build reports zero known vulnerabilities. A local smoke run uses UID 1000, a read-only filesystem, dropped capabilities, temporary test-only signing material and the isolated PostgreSQL database; readiness and revision endpoints respond successfully. This does not validate EC2 network rules, RDS TLS, instance IAM, Cognito callbacks, S3 policies or public DNS/TLS.
 
 No AWS resources were provisioned, no real payment processed, and no store upload or public release occurred. Configure and execute the documented live acceptance checks before calling the product production-ready. Pending commercial and operational items are enumerated in `implementation-plan.md`, `codebase-guide.md` and the deployment guides.
+
+### Clean-checkout correction — 2026-10-14
+
+Hosted CI exposed a missing direct `@types/node` dependency that the original workstation resolved from its surrounding environment. The root package now declares Node 22 types explicitly and includes them in TypeScript's configured types. A separate clean copy under `/private/tmp` passed `npm ci --offline` and the full `npm run check` (90 tests, formatting, typecheck and build). Backend CI now also watches root dependency/configuration changes and checks shared-schema parity. Hosted CI results must be checked against the corrected commit, not the earlier failed run.
